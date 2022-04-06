@@ -1,12 +1,5 @@
-# Science Fiction Novel API - FastAPI Edition
-#
-# Adapted from "Creating Web APIs with Python and Flask"
-# <https://programminghistorian.org/en/lessons/creating-apis-with-python-and-flask>.
-#
-
 import collections
 import contextlib
-#import logging.config
 import sqlite3
 import typing
 
@@ -31,31 +24,28 @@ def get_db():
         yield db
 
 
-#def get_logger():
-#    return logging.getLogger(__name__)
-
 
 settings = Settings()
 app = FastAPI()
 
-#logging.config.fileConfig(settings.logging_config)
 
-@app.post("/words/", status_code=status.HTTP_201_CREATED)
+@app.post("/words/", status_code=status.HTTP_200_OK)
 def validate_word(
     word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
 ):
-    w = dict(word_obj)
+    w = word_obj.word.lower() 
+   
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
+
     try:
-        cur = db.execute(
-            """
-            SELECT COUNT(*) FROM ValidWords WHERE word = :word
-            """,
-            w
-        )
+        cur = db.execute("SELECT COUNT(*) FROM ValidWords WHERE word = ?", word)
         db.commit()
     except Exception:
-        return {"data": "Failed to reach database"}
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database"}
 
-    res = cur.fetchall()
-    return {"data": "Valid"} if res[0][0] > 0 else {"data": "Invalid"}
+    word_exists = bool(cur.fetchall()[0][0])
+    return {"msg": "Valid"} if word_exists else {"msg": "Invalid"}
 

@@ -29,13 +29,15 @@ def get_db():
 settings = Settings()
 app = FastAPI()
 
-@app.post("/answer/", status_code=status.HTTP_201_CREATED)
+@app.post("/answer/", status_code=status.HTTP_200_OK)
 def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)):
 
     # Change word to all lowercase
     word = word_obj.word.lower()
 
-    if (len(word) != 5): return {"msg": "Error: Incorrect word length"}
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
 
     # Grab the epoch date from the settings
     epoch = datetime.strptime(settings.epoch, "%Y-%m-%d")
@@ -46,6 +48,7 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
         cur = db.execute("SELECT word FROM Answers WHERE id = ?", (day,))
         db.commit()
     except Exception:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"msg": "Error: Failed to reach database"}
 
     todaysWord = cur.fetchall()[0][0]
