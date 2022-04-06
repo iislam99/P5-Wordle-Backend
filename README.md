@@ -3,7 +3,7 @@
 1. Install the required libraries and tools
 ```bash
 sudo apt update
-sudo apt install --yes python3-pip ruby-foreman sqlite3 httpie
+sudo apt install --yes python3-pip ruby-foreman sqlite3 httpie jq
 python3 -m pip install 'fastapi[all]'
 python3 -m pip install sqlite-utils
 ```
