@@ -7,6 +7,8 @@ from datetime import datetime
 from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
 
+DEBUG = False
+
 
 class Settings(BaseSettings):
     answers_database: str
@@ -25,6 +27,11 @@ def get_db():
         db.row_factory = sqlite3.Row
         yield db
 
+# Grabs the index for the word of the day
+def dayIndex():
+    epoch = datetime.strptime(settings.epoch, "%Y-%m-%d")
+    diff_days = (datetime.now() - epoch).days
+    return diff_days % settings.max_words
 
 settings = Settings()
 app = FastAPI()
@@ -32,17 +39,13 @@ app = FastAPI()
 @app.post("/answer/", status_code=status.HTTP_200_OK)
 def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)):
 
-    # Change word to all lowercase
     word = word_obj.word.lower()
 
     if (len(word) != 5):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"msg": "Error: Incorrect word length"}
 
-    # Grab the epoch date from the settings
-    epoch = datetime.strptime(settings.epoch, "%Y-%m-%d")
-    # Calculate the number of days since epoch, used as index for answers, use mod to prevent Index OOB
-    day = (datetime.now() - epoch).days % settings.max_words 
+    day = dayIndex() 
 
     try:
         cur = db.execute("SELECT word FROM Answers WHERE id = ?", (day,))
@@ -60,15 +63,19 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
 
     results = [0] * len(word)
 
+    # Find all perfect matches
     for i,c in enumerate(word):
         if c in freq_map and freq_map[c] > 0:
             if word[i] == todaysWord[i]:
                 results[i] = 2
                 freq_map[c] -= 1
 
+    # Find all word matches that arent positioned correctly
     for i,c in enumerate(word):
         if c in freq_map and freq_map[c] > 0 and results[i] == 0:
             results[i] = 1
             freq_map[c] -= 1
-
-    return {"results": results, "word_of_the_day": todaysWord}
+    if (DEBUG):
+        return {"results": results, "word_of_the_day": todaysWord}
+    else:
+        return {"results": results}

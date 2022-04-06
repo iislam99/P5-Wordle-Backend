@@ -14,7 +14,7 @@ python3 -m pip install sqlite-utils
 ```
 This will download the wordle wordlists, parse them, create the database, and fill the database
 
-3. To begin both microservices, run
+3. To begin both microservices, in `api` run
 ```bash
 foreman start
 ```
