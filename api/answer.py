@@ -42,7 +42,7 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
     # Grab the epoch date from the settings
     epoch = datetime.strptime(settings.epoch, "%Y-%m-%d")
     # Calculate the number of days since epoch, used as index for answers, use mod to prevent Index OOB
-    day = settings.max_words % (datetime.now() - epoch).days
+    day = (datetime.now() - epoch).days % settings.max_words 
 
     try:
         cur = db.execute("SELECT word FROM Answers WHERE id = ?", (day,))
@@ -54,6 +54,7 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
     todaysWord = cur.fetchall()[0][0]
     
     # Create frequency map of each letter in the word 
+    freq_map = {}
     for c in todaysWord:
         freq_map[c] = freq_map.get(c, 0) + 1
 
