@@ -33,7 +33,7 @@ app = FastAPI()
 def validate_word(
     word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
 ):
-    w = word_obj.word.lower() 
+    word = word_obj.word.lower() 
    
     if (len(word) != 5):
         response.status_code = status.HTTP_400_BAD_REQUEST
