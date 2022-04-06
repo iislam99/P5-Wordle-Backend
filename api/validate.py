@@ -40,11 +40,11 @@ def validate_word(
         return {"msg": "Error: Incorrect word length"}
 
     try:
-        cur = db.execute("SELECT COUNT(*) FROM ValidWords WHERE word = ?", word)
+        cur = db.execute("SELECT COUNT(*) FROM ValidWords WHERE word = ?", (word,))
         db.commit()
-    except Exception:
+    except Exception as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
-        return {"msg": "Error: Failed to reach database"}
+        return {"msg": "Error: Failed to reach database. " + str(e)}
 
     word_exists = bool(cur.fetchall()[0][0])
     return {"msg": "Valid"} if word_exists else {"msg": "Invalid"}
