@@ -47,9 +47,9 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
     try:
         cur = db.execute("SELECT word FROM Answers WHERE id = ?", (day,))
         db.commit()
-    except Exception:
+    except Exception as e:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        return {"msg": "Error: Failed to reach database"}
+        return {"msg": "Error: Failed to reach database. " + str(e)}
 
     todaysWord = cur.fetchall()[0][0]
     
