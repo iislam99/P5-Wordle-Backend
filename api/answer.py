@@ -1,12 +1,5 @@
-# Science Fiction Novel API - FastAPI Edition
-#
-# Adapted from "Creating Web APIs with Python and Flask"
-# <https://programminghistorian.org/en/lessons/creating-apis-with-python-and-flask>.
-#
-
 import collections
 import contextlib
-#import logging.config
 import sqlite3
 import typing
 from datetime import datetime
@@ -42,7 +35,7 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
     # Change word to all lowercase
     word = word_obj.word.lower()
 
-    if (len(word) != 5) return {"msg": "Error: Incorrect word length"}
+    if (len(word) != 5): return {"msg": "Error: Incorrect word length"}
 
     # Grab the epoch date from the settings
     epoch = datetime.strptime(settings.epoch, "%Y-%m-%d")
