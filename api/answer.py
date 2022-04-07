@@ -9,7 +9,6 @@ from pydantic import BaseModel, BaseSettings
 
 DEBUG = False
 
-
 class Settings(BaseSettings):
     answers_database: str
     logging_config: str
@@ -75,6 +74,7 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
         if c in freq_map and freq_map[c] > 0 and results[i] == 0:
             results[i] = 1
             freq_map[c] -= 1
+
     if (DEBUG):
         return {"results": results, "word_of_the_day": todaysWord}
     else:
