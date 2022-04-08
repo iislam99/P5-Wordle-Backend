@@ -1,5 +1,10 @@
 # Wordle Clone
 
+TODO:
+```
+Make /check/ output more readable, with letters, and a human readable indictor for accuracy
+```
+
 1. Clone the directory
 ```bash
 git clone https://github.com/AaronLieb/WordleClone.git
@@ -33,16 +38,17 @@ This will download the wordle wordlists, parse them, create the database, and fi
 foreman start
 ```
 
-7. In a separate terminal, you can test the microservices using two scripts in the `bin` directory
-Test the word validation microservice:
+7. To view the documentation of the endpoints, open the swagger docs
+On the port for the microservice use the `/docs/` endpoint to check the available endpoints for that microservice
+
+8. In a separate terminal, you can test the microservices using the scripts in the `bin/endpoint-tests/` directory
+Most of the scripts use command line arguments to send words, here is an example of one being used
+
+Test word validation:
 ```bash
-./bin/post_validate.sh <word>
+./bin/endpoint-tests/put_validate.sh <word>
 ```
 
-Test the answer checking microservice:
-```bash
-./bin/post_answer.sh <word>
-```
 
 
 
