@@ -5,6 +5,8 @@
 * Armanul Ambia
 * Iftekharul Islam
 
+## Installation
+
 1. Clone the directory
 ```bash
 git clone https://github.com/AaronLieb/WordleClone.git
