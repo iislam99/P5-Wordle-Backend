@@ -1,10 +1,5 @@
 # Wordle Clone
 
-TODO:
-```
-Make /check/ output more readable, with letters, and a human readable indictor for accuracy
-```
-
 1. Clone the directory
 ```bash
 git clone https://github.com/AaronLieb/WordleClone.git
@@ -39,6 +34,7 @@ foreman start
 ```
 
 7. To view the documentation of the endpoints, open the swagger docs
+
 On the port for the microservice use the `/docs/` endpoint to check the available endpoints for that microservice
 
 8. In a separate terminal, you can test the microservices using the scripts in the `bin/endpoint-tests/` directory
