@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
 
-DEBUG = False
+DEBUG = True
 
 class Settings(BaseSettings):
     answers_database: str
@@ -35,8 +35,8 @@ def dayIndex():
 settings = Settings()
 app = FastAPI()
 
-@app.post("/answer/", status_code=status.HTTP_200_OK)
-def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)):
+@app.put("/check/", status_code=status.HTTP_200_OK)
+def check(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)):
 
     word = word_obj.word.lower()
 
@@ -44,16 +44,27 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"msg": "Error: Incorrect word length"}
 
-    day = dayIndex() 
-
     try:
-        cur = db.execute("SELECT word FROM Answers WHERE id = ?", (day,))
+        cur = db.execute("SELECT word FROM Queued_Answer")
         db.commit()
     except Exception as e:
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"msg": "Error: Failed to reach database. " + str(e)}
+    
+    rows = cur.fetchall()
 
-    todaysWord = cur.fetchall()[0][0]
+    if(len(rows) == 0):
+        day = dayIndex() 
+
+        try:
+            cur = db.execute("SELECT word FROM Answers WHERE id = ?", (day,))
+            db.commit()
+            rows = cur.fetchall()
+        except Exception as e:
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            return {"msg": "Error: Failed to reach database. " + str(e)}
+
+    todaysWord = rows[0][0]
     
     # Create frequency map of each letter in the word 
     freq_map = {}
@@ -79,3 +90,77 @@ def answer(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(
         return {"results": results, "word_of_the_day": todaysWord}
     else:
         return {"results": results}
+
+@app.post("/next-answer/", status_code=status.HTTP_201_CREATED)
+def set_next_answer(
+    word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
+):
+    word = word_obj.word.lower() 
+   
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
+
+    try:
+        cur = db.execute("DELETE FROM Queued_Answer")
+        cur = db.execute("INSERT INTO Queued_Answer (word) VALUES (?)", (word,))
+        db.commit()
+    except Exception as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database. " + type(e).__name__ + " | " + str(e)}
+
+    return {"msg": "Successfully set the new answer."}
+
+@app.delete("/next-answer/", status_code=status.HTTP_201_CREATED)
+def delete_next_answer(
+    response: Response, db: sqlite3.Connection = Depends(get_db)
+):
+    try:
+        cur = db.execute("DELETE FROM Queued_Answer")
+        db.commit()
+    except Exception as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database. " + type(e).__name__ + " | " + str(e)}
+
+    return {"msg": "Successfully removed the custom answer. The new answer is the word of the day."}
+
+@app.post("/answers/", status_code=status.HTTP_201_CREATED)
+def create_answer(
+    word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
+):
+    word = word_obj.word.lower() 
+   
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
+
+    try:
+        cur = db.execute("INSERT INTO Answers (id, word) VALUES (NULL, ?)", (word,))
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        response.status_code = status.HTTP_409_CONFLICT
+        return {"msg": "Duplicate Entry."}
+    except Exception as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database. " + type(e).__name__ + " | " + str(e)}
+
+    return {"msg": "Successfully added to the answer list."}
+
+@app.delete("/answers/", status_code=status.HTTP_200_OK)
+def delete_answer(
+    word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
+):
+    word = word_obj.word.lower() 
+   
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
+
+    try:
+        cur = db.execute("DELETE FROM Answers WHERE word = ?", (word,))
+        db.commit()
+    except Exception as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database. " + type(e).__name__ + " | " + str(e)}
+
+    return {"msg": "Successfully removed from the word list."}
