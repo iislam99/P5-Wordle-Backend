@@ -1,9 +1,9 @@
 # Wordle Clone
 
 ### Created by
-*Aaron Lieberman
-*Armanul Ambia
-*Iftekharul Islam
+* Aaron Lieberman
+* Armanul Ambia
+* Iftekharul Islam
 
 1. Clone the directory
 ```bash
