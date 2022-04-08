@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
 
-DEBUG = True
+DEBUG = False
 
 class Settings(BaseSettings):
     answers_database: str
