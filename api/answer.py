@@ -85,11 +85,17 @@ def check(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(g
         if c in freq_map and freq_map[c] > 0 and results[i] == 0:
             results[i] = 1
             freq_map[c] -= 1
+    
+    correct = True
+    for letter in results:
+        if letter != 2:
+            correct = False
+            break
 
     if (DEBUG):
-        return {"results": results, "word_of_the_day": todaysWord}
+        return {"correct": correct, "results": results, "word_of_the_day": todaysWord}
     else:
-        return {"results": results}
+        return {"correct": correct, "results": results}
 
 @app.post("/next-answer/", status_code=status.HTTP_201_CREATED)
 def set_next_answer(
