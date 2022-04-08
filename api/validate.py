@@ -29,7 +29,7 @@ settings = Settings()
 app = FastAPI()
 
 
-@app.post("/words/", status_code=status.HTTP_200_OK)
+@app.put("/validate/", status_code=status.HTTP_202_ACCEPTED)
 def validate_word(
     word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
 ):
@@ -47,5 +47,50 @@ def validate_word(
         return {"msg": "Error: Failed to reach database. " + str(e)}
 
     word_exists = bool(cur.fetchall()[0][0])
-    return {"msg": "Valid"} if word_exists else {"msg": "Invalid"}
+    if word_exists:
+        return {"msg": "Valid"}
+    else:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"msg": "Invalid"}
 
+
+@app.post("/words/", status_code=status.HTTP_201_CREATED)
+def create_word(
+    word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
+):
+    word = word_obj.word.lower() 
+   
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
+
+    try:
+        cur = db.execute("INSERT INTO ValidWords (word) VALUES (?)", (word,))
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        response.status_code = status.HTTP_409_CONFLICT
+        return {"msg": "Duplicate Entry."}
+    except Exception as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database. " + type(e).__name__ + " | " + str(e)}
+
+    return {"msg": "Successfully added to the word list."}
+
+@app.delete("/words/", status_code=status.HTTP_200_OK)
+def delete_word(
+    word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
+):
+    word = word_obj.word.lower() 
+   
+    if (len(word) != 5):
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Incorrect word length"}
+
+    try:
+        cur = db.execute("DELETE FROM ValidWords WHERE word = ?", (word,))
+        db.commit()
+    except Exception as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: Failed to reach database. " + type(e).__name__ + " | " + str(e)}
+
+    return {"msg": "Successfully removed from the word list."}
