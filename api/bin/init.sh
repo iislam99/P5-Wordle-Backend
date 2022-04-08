@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Create a variable for the answers file
-answers='share/dict/words/answers.csv'
+answers='share/dict/answers.csv'
 
 # Add the id and word header to the columns
 echo "id,word" > $answers
@@ -11,7 +11,7 @@ curl --silent https://www.nytimes.com/games/wordle/main.bfba912f.js |
 sed -e 's/^.*var Ma=//' -e 's/,Oa=.*$//' -e 1q | jq | tail -n +2 | head -n -1 | cut -c4-8 | awk '{print NR-1","$0}' >> $answers 
 
 # Create a variable for the valid words file
-valid_words='share/dict/words/valid_words.csv'
+valid_words='share/dict/words.csv'
 
 # Add the word header to the column
 echo "word" > $valid_words
@@ -24,6 +24,6 @@ sqlite3 ./var/valid_words.db < ./share/valid_words.sql
 sqlite3 ./var/answers.db < ./share/answers.sql
 
 # Insert the data from the word csv files into the databases
-sqlite-utils insert ./var/valid_words.db ValidWords ./share/dict/words/valid_words.csv --csv --detect-types
-sqlite-utils insert ./var/answers.db Answers ./share/dict/words/answers.csv --csv
+sqlite-utils insert ./var/valid_words.db ValidWords ./share/dict/words.csv --csv --detect-types
+sqlite-utils insert ./var/answers.db Answers ./share/dict/answers.csv --csv
 
