@@ -4,6 +4,7 @@
 * Aaron Lieberman
 * Armanul Ambia
 * Iftekharul Islam
+* Jacob Nguyen
 
 ## Installation
 
