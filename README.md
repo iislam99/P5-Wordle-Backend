@@ -1,5 +1,10 @@
 # Wordle Clone
 
+### Created by
+*Aaron Lieberman
+*Armanul Ambia
+*Iftekharul Islam
+
 1. Clone the directory
 ```bash
 git clone https://github.com/AaronLieb/WordleClone.git
