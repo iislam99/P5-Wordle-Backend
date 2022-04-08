@@ -21,8 +21,8 @@ cd WordleClone
 3. Install the required libraries and tools
 ```bash
 sudo apt update
-sudo apt install --yes python4-pip ruby-foreman sqlite3 httpie jq
-python4 -m pip install 'fastapi[all]' sqlite-utils
+sudo apt install --yes python3-pip ruby-foreman sqlite3 httpie jq
+python3 -m pip install 'fastapi[all]' sqlite-utils
 ```
 
 4. Go into the `api` directory

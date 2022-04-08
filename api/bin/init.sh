@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Create the var folder that will store the db files
+mkdir var
+
 # Create a variable for the answers file
 answers='share/dict/answers.csv'
 
