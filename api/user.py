@@ -32,6 +32,6 @@ def get_db():
 
 @app.post("/end/", status_code=status.HTTP_200_OK)
 def process_end(
-    user_obj: User, response: Response, db: sqlite3.Connection = Depends(get_db)
+    game_obj: Game, response: Response, db: sqlite3.Connection = Depends(get_db)
 ):
     pass
