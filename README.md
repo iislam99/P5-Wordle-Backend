@@ -57,7 +57,7 @@ Test word validation:
 
 Test posting win or loss:
 ```bash
-./bin/endpoint-tests/post_win_loss.sh <user_id> <user_id> <game_id> <guesses> <won>
+./bin/endpoint-tests/post_win_loss.sh <user_id> <game_id> <guesses> <won>
 ```
 In this script, 5 argument parameters are passed in, user_id: int, game_id: int, guesses: int, and won: bool (1 or 0)
 
@@ -72,7 +72,7 @@ If the user_id is not known we can also use
 
 Test Getting Users with Most Wins:
 ```bash
-./bin/endpoint-tests/get_top_winners.sh
+./bin/endpoint-tests/get_top_wins.sh
 ```
 
 Test Getting Users with Longest Streak:
