@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+
+import sqlite3
+import uuid
+from pydantic import BaseSettings
+
+class Settings(BaseSettings):
+    stats_database: str
+    games_1_database: str
+    games_2_database: str
+    games_3_database: str
+    users_database: str
+    logging_config: str
+
+    class Config:
+        env_file = ".env"
+
+print("Beginning sharding...")
+
+settings = Settings()
+
+stats_conn = sqlite3.connect(settings.stats_database, detect_types=sqlite3.PARSE_DECLTYPES)
+users_conn = sqlite3.connect(settings.users_database, detect_types=sqlite3.PARSE_DECLTYPES)
+games_conn = [
+    sqlite3.connect(settings.games_1_database, detect_types=sqlite3.PARSE_DECLTYPES),
+    sqlite3.connect(settings.games_2_database, detect_types=sqlite3.PARSE_DECLTYPES),
+    sqlite3.connect(settings.games_3_database, detect_types=sqlite3.PARSE_DECLTYPES)
+]
+
+stats_cur = stats_conn.cursor()
+users_cur = users_conn.cursor()
+games_cur = [i.cursor() for i in games_conn]
+
+
+# Create new users table with GUID column in users db
+# Copy users from stats db to users db into new users table
+# Delete old users table in users db
+# Rename new users table in users db to users
+sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
+sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
+id_to_uuid = {}
+try:  
+    users_cur.execute('DROP TABLE IF EXISTS users_new')
+    users_cur.execute('''CREATE TABLE users_new (
+                            guid GUID PRIMARY KEY, 
+                            user_id INTEGER, 
+                            username VARCHAR UNIQUE
+                         )''')
+    stats_cur.execute('SELECT * FROM users')
+    users_list = stats_cur.fetchall()
+
+    for row in users_list:
+        guid = uuid.uuid4()
+        user_data = (guid, row[0], row[1])
+        users_cur.execute('INSERT INTO users_new VALUES (?,?,?)', user_data)
+        id_to_uuid[row[0]] = guid
+
+    users_cur.execute('DROP TABLE users')
+    users_cur.execute('ALTER TABLE users_new RENAME TO users')
+    users_conn.commit()
+    print("GUID column added to users table.")
+
+    # Check if users populated correctly
+    # users_cur.execute('Select * FROM users LIMIT 10')
+    # users_list = users_cur.fetchall()
+    # for u in users_list:
+    #     print(u)
+    #     try:
+    #         print('Indexed:', u[0])
+    #     except:
+    #         print("Could not print indexed.")
+    #     try:
+    #         print('Modulo:', int(u[0]) % 3)
+    #     except:
+    #         print('Could not print modulo.')
+    #     print()
+except Exception as e:
+    print("Error: Failed to copy users and add GUID column. " + str(e))
+
+
+# For each row in games table in stats db, assign row to games shard
+try:
+    # Replace tables in game shards for UUID compatibility
+    for i in range(3):
+        games_cur[i].execute('DROP TABLE IF EXISTS games_new')
+        games_cur[i].execute('''
+            CREATE TABLE games_new (
+                guid GUID,
+                game_id INTEGER NOT NULL,
+                finished DATE DEFAULT CURRENT_TIMESTAMP,
+                guesses INTEGER,
+                won BOOLEAN,
+                PRIMARY KEY(guid, game_id),
+                FOREIGN KEY(guid) REFERENCES users(guid)
+            )''')
+        games_cur[i].execute('DROP TABLE games')
+        games_cur[i].execute('ALTER TABLE games_new RENAME TO games')
+        games_conn[i].commit()
+    print("Games tables replaced successfully.")
+
+    try:
+        # Move game values from stats db to games shard based on uuid as shard key
+        stats_cur.execute('SELECT * FROM games')
+        games_list = stats_cur.fetchall()
+        
+        for g in games_list:
+            guid = id_to_uuid[g[0]]
+            shard = int(guid) % 3
+            game_data = (guid, g[1], g[2], g[3], g[4])
+            games_cur[shard].execute('INSERT INTO games VALUES (?,?,?,?,?)', game_data)
+
+        for g in games_conn:
+            g.commit()
+        print("Added values to games shards successfully.")
+
+    except Exception as e:
+        print("Failed to add values to games shards.", str(e))
+
+except Exception as e:
+    print("Failed to replace games tables.", str(e))
+
+# Checking if games shards are populated properly
+# try:
+#     for i, g in enumerate(games_cur):
+#         print('-'*30)
+#         print(f"Shard {i+1}:")
+#         g.execute('SELECT * FROM games LIMIT 5')
+#         games_list = g.fetchall()
+#         for row in games_list:
+#             print(row)
+# except Exception as e:
+#     print("Error: Failed to view table values.", str(e))
+
+# print("Sharding completed.")
+
+# stats_conn.close()
+# users_conn.close()
+# for g in games_conn:
+#     g.close()
