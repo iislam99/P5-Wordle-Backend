@@ -28,6 +28,13 @@ sqlite3 ./var/answers.db < ./share/answers.sql
 # this populated sql file will also read in values for stats.db
 sqlite3 ./var/stats.db < ./share/sqlite3-populated.sql
 
+# Initialize sharded databases for games and users
+sqlite3 ./var/games_1.db < ./share/games.sql
+sqlite3 ./var/games_2.db < ./share/games.sql
+sqlite3 ./var/games_3.db < ./share/games.sql
+sqlite3 ./var/users.db < ./share/users.sql
+./sharding.py
+
 # Insert the data from the word csv files into the databases
 sqlite-utils insert ./var/valid_words.db ValidWords ./share/dict/words.csv --csv --detect-types
 sqlite-utils insert ./var/answers.db Answers ./share/dict/answers.csv --csv
