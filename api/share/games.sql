@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = ON;
+
 DROP TABLE IF EXISTS games;
 
 CREATE TABLE games(
@@ -9,3 +11,6 @@ CREATE TABLE games(
     PRIMARY KEY(user_id, game_id),
     FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
+
+PRAGMA analysis_limit=1000;
+PRAGMA optimize;
