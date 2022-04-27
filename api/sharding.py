@@ -82,42 +82,115 @@ except Exception as e:
 try:
     # Replace tables in game shards for UUID compatibility
     for i in range(3):
-        games_cur[i].execute('DROP TABLE IF EXISTS games_new')
+        games_cur[i].execute('DROP TABLE IF EXISTS games')
         games_cur[i].execute('''
-            CREATE TABLE games_new (
-                guid GUID,
+            CREATE TABLE games (
+                user_id GUID,
                 game_id INTEGER NOT NULL,
                 finished DATE DEFAULT CURRENT_TIMESTAMP,
                 guesses INTEGER,
                 won BOOLEAN,
-                PRIMARY KEY(guid, game_id),
-                FOREIGN KEY(guid) REFERENCES users(guid)
+                PRIMARY KEY(user_id, game_id),
+                FOREIGN KEY(user_id) REFERENCES users(user_id)
             )''')
-        games_cur[i].execute('DROP TABLE games')
-        games_cur[i].execute('ALTER TABLE games_new RENAME TO games')
+        games_cur[i].execute('CREATE INDEX games_won_idx ON games(won)')
         games_conn[i].commit()
     print("Games tables replaced successfully.")
-
-    try:
-        # Move game values from stats db to games shard based on uuid as shard key
-        stats_cur.execute('SELECT * FROM games')
-        games_list = stats_cur.fetchall()
-        
-        for g in games_list:
-            guid = id_to_uuid[g[0]]
-            shard = int(guid) % 3
-            game_data = (guid, g[1], g[2], g[3], g[4])
-            games_cur[shard].execute('INSERT INTO games VALUES (?,?,?,?,?)', game_data)
-
-        for g in games_conn:
-            g.commit()
-        print("Added values to games shards successfully.")
-
-    except Exception as e:
-        print("Failed to add values to games shards.", str(e))
-
 except Exception as e:
     print("Failed to replace games tables.", str(e))
+
+for i in range(3):
+    try:
+        # Add wins views to shard
+        games_cur[i].execute('DROP VIEW IF EXISTS wins')
+        games_cur[i].execute('''
+            CREATE VIEW wins
+            AS
+                SELECT
+                    user_id,
+                    COUNT(won)
+                FROM
+                    games
+                WHERE
+                    won = TRUE
+                GROUP BY
+                    user_id
+                ORDER BY
+                    COUNT(won) DESC
+            ''')
+        games_conn[i].commit()
+        print("Wins view created successfully.")
+    except Exception as e:
+        print("Error: Failed to create wins view. " + str(e))
+
+for i in range(3):
+    try:
+        # Add streaks view to shard
+        games_cur[i].execute('DROP VIEW IF EXISTS streaks')
+        games_cur[i].execute('''
+            CREATE VIEW streaks
+            AS
+                WITH ranks AS (
+                    SELECT DISTINCT
+                        user_id,
+                        finished,
+                        RANK() OVER(PARTITION BY user_id ORDER BY finished) AS rank
+                    FROM
+                        games
+                    WHERE
+                        won = TRUE
+                    ORDER BY
+                        user_id,
+                        finished
+                ),
+                groups AS (
+                    SELECT
+                        user_id,
+                        finished,
+                        rank,
+                        DATE(finished, '-' || rank || ' DAYS') AS base_date
+                    FROM
+                        ranks
+                )
+                SELECT
+                    user_id,
+                    COUNT(*) AS streak,
+                    MIN(finished) AS beginning,
+                    MAX(finished) AS ending
+                FROM
+                    groups
+                GROUP BY
+                    user_id, base_date
+                HAVING
+                    streak > 1
+                ORDER BY
+                    user_id,
+                    finished
+            ''')
+        games_conn[i].commit()
+        print("Streaks view created successfully.")
+    except Exception as e:
+        print("Error: Failed to create streaks view. " + str(e))
+
+try:
+    # Move game values from stats db to games shard based on uuid as shard key
+    stats_cur.execute('SELECT * FROM games')
+    games_list = stats_cur.fetchall()
+    
+    for g in games_list:
+        guid = id_to_uuid[g[0]]
+        shard = int(guid) % 3
+        game_data = (guid, g[1], g[2], g[3], g[4])
+        games_cur[shard].execute('INSERT INTO games VALUES (?,?,?,?,?)', game_data)
+
+    for g in games_conn:
+        g.commit()
+    print("Added values to games shards successfully.")
+
+except Exception as e:
+    print("Failed to add values to games shards.", str(e))
+
+
 
 # Checking if games shards are populated properly
 # try:
