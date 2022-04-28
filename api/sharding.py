@@ -42,8 +42,7 @@ id_to_uuid = {}
 try:  
     users_cur.execute('DROP TABLE IF EXISTS users_new')
     users_cur.execute('''CREATE TABLE users_new (
-                            guid GUID PRIMARY KEY, 
-                            user_id INTEGER, 
+                            user_id GUID PRIMARY KEY, 
                             username VARCHAR UNIQUE
                          )''')
     stats_cur.execute('SELECT * FROM users')
@@ -51,8 +50,8 @@ try:
 
     for row in users_list:
         guid = uuid.uuid4()
-        user_data = (guid, row[0], row[1])
-        users_cur.execute('INSERT INTO users_new VALUES (?,?,?)', user_data)
+        user_data = (guid, row[1])
+        users_cur.execute('INSERT INTO users_new VALUES (?,?)', user_data)
         id_to_uuid[row[0]] = guid
 
     users_cur.execute('DROP TABLE users')
@@ -98,6 +97,25 @@ try:
     print("Games tables replaced successfully.")
 except Exception as e:
     print("Failed to replace games tables.", str(e))
+
+try:
+    # Move game values from stats db to games shard based on uuid as shard key
+    stats_cur.execute('SELECT * FROM games')
+    games_list = stats_cur.fetchall()
+    
+    for g in games_list:
+        guid = id_to_uuid[g[0]]
+        shard = int(guid) % 3
+        game_data = (guid, g[1], g[2], g[3], g[4])
+        games_cur[shard].execute('INSERT INTO games VALUES (?,?,?,?,?)', game_data)
+
+    for g in games_conn:
+        g.commit()
+    print("Added values to games shards successfully.")
+
+except Exception as e:
+    print("Failed to add values to games shards.", str(e))
+
 
 for i in range(3):
     try:
@@ -171,25 +189,6 @@ for i in range(3):
         print("Streaks view created successfully.")
     except Exception as e:
         print("Error: Failed to create streaks view. " + str(e))
-
-try:
-    # Move game values from stats db to games shard based on uuid as shard key
-    stats_cur.execute('SELECT * FROM games')
-    games_list = stats_cur.fetchall()
-    
-    for g in games_list:
-        guid = id_to_uuid[g[0]]
-        shard = int(guid) % 3
-        game_data = (guid, g[1], g[2], g[3], g[4])
-        games_cur[shard].execute('INSERT INTO games VALUES (?,?,?,?,?)', game_data)
-
-    for g in games_conn:
-        g.commit()
-    print("Added values to games shards successfully.")
-
-except Exception as e:
-    print("Failed to add values to games shards.", str(e))
-
 
 
 # Checking if games shards are populated properly
