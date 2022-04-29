@@ -38,3 +38,10 @@ sqlite3 ./var/users.db < ./share/users.sql
 # Insert the data from the word csv files into the databases
 sqlite-utils insert ./var/valid_words.db ValidWords ./share/dict/words.csv --csv --detect-types
 sqlite-utils insert ./var/answers.db Answers ./share/dict/answers.csv --csv
+
+mkdir temp
+wget -O traefik.tar.gz https://github.com/traefik/traefik/releases/download/v2.6.3/traefik_v2.6.3_linux_amd64.tar.gz
+tar -xf traefik.tar.gz -C temp
+mv ./temp/traefik .
+rm -rf temp
+rm traefik.tar.gz
