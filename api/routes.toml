@@ -1,0 +1,35 @@
+[http]
+
+  [http.routers]
+
+    [http.routers.validate-http]
+      entryPoints = ["http"]
+      service = "validate"
+      rule = "PathPrefix(`/validate`) || PathPrefix(`/words`)"
+
+    [http.routers.answer-http]
+      entryPoints = ["http"]
+      service = "answer"
+      rule = "PathPrefix(`/answer`) || PathPrefix(`/next-answer`) || PathPrefix(`/check`)"
+
+    [http.routers.stats-http]
+      entryPoints = ["http"]
+      service = "stats"
+      rule = "PathPrefix(`/stats`) || PathPrefix(`/longest_streak`) || PathPrefix(`/top_wins`) || PathPrefix(`/finish`)"
+
+  [http.services]
+
+    [http.services.app]
+      [http.services.validate.loadBalancer]
+        [[http.services.validate.loadBalancer.servers]]
+          url = "http://127.0.0.1:5000"
+      [http.services.answer.loadBalancer]
+        [[http.services.answer.loadBalancer.servers]]
+          url = "http://127.0.0.1:5100"
+      [http.services.stats.loadBalancer]
+        [[http.services.stats.loadBalancer.servers]]
+          url = "http://127.0.0.1:5200"
+        [[http.services.stats.loadBalancer.servers]]
+          url = "http://127.0.0.1:5201"
+        [[http.services.stats.loadBalancer.servers]]
+          url = "http://127.0.0.1:5202"
