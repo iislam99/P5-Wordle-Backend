@@ -53,19 +53,15 @@ Test word validation:
 ./bin/endpoint-tests/put_validate.sh <word>
 ```
 
-9. Project 3 end points
+## Project 3 end points
 
 Test posting win or loss:
 ```bash
-./bin/endpoint-tests/post_win_loss.sh <user_id> <game_id> <guesses> <won>
+./bin/endpoint-tests/post_win_loss.sh <username> <game_id> <guesses> <won>
 ```
-In this script, 5 argument parameters are passed in, user_id: int, game_id: int, guesses: int, and won: bool (1 or 0)
+In this script, 5 argument parameters are passed in, username: int, game_id: int, guesses: int, and won: bool (1 or 0)
 
 Test getting stats:
-```bash
-./bin/endpoint-tests/get_stats.sh <user_name> <user_id> 
-```
-If the user_id is not known we can also use
 ```bash
 ./bin/endpoint-tests/get_stats.sh <user_name>
 ```
