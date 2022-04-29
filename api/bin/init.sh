@@ -1,5 +1,6 @@
 #!/bin/sh
 
+echo "Running init...."
 # Create the var folder that will store the db files
 mkdir var 2> /dev/null
 
@@ -9,6 +10,7 @@ answers='share/dict/answers.csv'
 # Add the id and word header to the columns
 echo "id,word" > $answers
 
+echo "Downloading word lists..."
 # Download the wordle script, parse the words, append to answers
 curl --silent https://www.nytimes.com/games/wordle/main.bfba912f.js |
 sed -e 's/^.*var Ma=//' -e 's/,Oa=.*$//' -e 1q | jq | tail -n +2 | head -n -1 | cut -c4-8 | awk '{print NR-1","$0}' >> $answers 
@@ -22,6 +24,7 @@ echo "word" > $valid_words
 # Download all valid wordle words, append to valid_words
 curl --silent https://gist.githubusercontent.com/dracos/dd0668f281e685bad51479e5acaadb93/raw/ca9018b32e963292473841fb55fd5a62176769b5/valid-wordle-words.txt >> $valid_words
 
+echo "Initialize databases..."
 # Initialize the schema for the databases
 sqlite3 ./var/valid_words.db < ./share/valid_words.sql
 sqlite3 ./var/answers.db < ./share/answers.sql
@@ -35,13 +38,18 @@ sqlite3 ./var/games_3.db < ./share/games.sql
 sqlite3 ./var/users.db < ./share/users.sql
 ./sharding.py
 
+echo "Insert data into databases..."
 # Insert the data from the word csv files into the databases
 sqlite-utils insert ./var/valid_words.db ValidWords ./share/dict/words.csv --csv --detect-types
 sqlite-utils insert ./var/answers.db Answers ./share/dict/answers.csv --csv
 
+echo "Downloading traefik binary..."
 mkdir temp
 wget -O traefik.tar.gz https://github.com/traefik/traefik/releases/download/v2.6.3/traefik_v2.6.3_linux_amd64.tar.gz
 tar -xf traefik.tar.gz -C temp
 mv ./temp/traefik .
 rm -rf temp
+
+
+echo "All done :)"
 rm traefik.tar.gz
