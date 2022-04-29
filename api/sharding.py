@@ -57,22 +57,7 @@ try:
     users_cur.execute('DROP TABLE users')
     users_cur.execute('ALTER TABLE users_new RENAME TO users')
     users_conn.commit()
-    print("GUID column added to users table.")
 
-    # Check if users populated correctly
-    # users_cur.execute('Select * FROM users LIMIT 10')
-    # users_list = users_cur.fetchall()
-    # for u in users_list:
-    #     print(u)
-    #     try:
-    #         print('Indexed:', u[0])
-    #     except:
-    #         print("Could not print indexed.")
-    #     try:
-    #         print('Modulo:', int(u[0]) % 3)
-    #     except:
-    #         print('Could not print modulo.')
-    #     print()
 except Exception as e:
     print("Error: Failed to copy users and add GUID column. " + str(e))
 
@@ -94,7 +79,6 @@ try:
             )''')
         games_cur[i].execute('CREATE INDEX games_won_idx ON games(won)')
         games_conn[i].commit()
-    print("Games tables replaced successfully.")
 except Exception as e:
     print("Failed to replace games tables.", str(e))
 
@@ -111,7 +95,6 @@ try:
 
     for g in games_conn:
         g.commit()
-    print("Added values to games shards successfully.")
 
 except Exception as e:
     print("Failed to add values to games shards.", str(e))
@@ -137,7 +120,6 @@ for i in range(3):
                     COUNT(won) DESC
             ''')
         games_conn[i].commit()
-        print("Wins view created successfully.")
     except Exception as e:
         print("Error: Failed to create wins view. " + str(e))
 
@@ -186,26 +168,6 @@ for i in range(3):
                     finished
             ''')
         games_conn[i].commit()
-        print("Streaks view created successfully.")
     except Exception as e:
         print("Error: Failed to create streaks view. " + str(e))
 
-
-# Checking if games shards are populated properly
-# try:
-#     for i, g in enumerate(games_cur):
-#         print('-'*30)
-#         print(f"Shard {i+1}:")
-#         g.execute('SELECT * FROM games LIMIT 5')
-#         games_list = g.fetchall()
-#         for row in games_list:
-#             print(row)
-# except Exception as e:
-#     print("Error: Failed to view table values.", str(e))
-
-# print("Sharding completed.")
-
-# stats_conn.close()
-# users_conn.close()
-# for g in games_conn:
-#     g.close()

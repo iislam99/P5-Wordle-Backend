@@ -11,7 +11,6 @@ from pydantic import BaseModel, BaseSettings
 
 
 class Settings(BaseSettings):
-    stats_database: str
     games_1_database: str
     games_2_database: str
     games_3_database: str
@@ -50,26 +49,13 @@ def get_db():
                     users.row_factory = sqlite3.Row
                     yield [db1, db2, db3, users]
 
-#     Alt logic for db dependancy
-# def get_db(shard: int = int(User.guid) % 3):
-#     let shard_conn = ""
-#     if shard == 0:
-#         shard_conn = settings.games_1_database
-#     if shard == 1:
-#         shard_conn = settings.games_2_database
-#     if shard == 2:
-#         shard_conn = settings.games_3_database
 
 settings = Settings()
 app = FastAPI()
 sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
 sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
 
-# games_conn = [
-#     sqlite3.connect(settings.games_1_database, detect_types=sqlite3.PARSE_DECLTYPES),
-#     sqlite3.connect(settings.games_2_database, detect_types=sqlite3.PARSE_DECLTYPES),
-#     sqlite3.connect(settings.games_3_database, detect_types=sqlite3.PARSE_DECLTYPES)
-# ]
+
 
 @app.post("/finish/", status_code=status.HTTP_200_OK)
 def process_end(
