@@ -38,7 +38,7 @@ This will download the wordle wordlists, parse them, create the database, and fi
 
 6. Start both microservices
 ```bash
-foreman start
+foreman start --formation val=1,ans=1,sts=3
 ```
 
 7. To view the documentation of the endpoints, open the swagger docs
