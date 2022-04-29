@@ -45,11 +45,10 @@ sqlite-utils insert ./var/answers.db Answers ./share/dict/answers.csv --csv
 
 echo "Downloading traefik binary..."
 mkdir temp
-wget -O traefik.tar.gz https://github.com/traefik/traefik/releases/download/v2.6.3/traefik_v2.6.3_linux_amd64.tar.gz
+wget -q -O traefik.tar.gz https://github.com/traefik/traefik/releases/download/v2.6.3/traefik_v2.6.3_linux_amd64.tar.gz
 tar -xf traefik.tar.gz -C temp
 mv ./temp/traefik .
 rm -rf temp
-
+rm traefik.tar.gz
 
 echo "All done :)"
-rm traefik.tar.gz
