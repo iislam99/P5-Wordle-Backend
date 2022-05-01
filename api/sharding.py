@@ -43,15 +43,16 @@ try:
     users_cur.execute('DROP TABLE IF EXISTS users_new')
     users_cur.execute('''CREATE TABLE users_new (
                             user_id GUID PRIMARY KEY, 
-                            username VARCHAR UNIQUE
+                            username VARCHAR UNIQUE,
+                            og_id INTEGER UNIQUE
                          )''')
     stats_cur.execute('SELECT * FROM users')
     users_list = stats_cur.fetchall()
 
     for row in users_list:
         guid = uuid.uuid4()
-        user_data = (guid, row[1])
-        users_cur.execute('INSERT INTO users_new VALUES (?,?)', user_data)
+        user_data = (guid, row[1], row[0])
+        users_cur.execute('INSERT INTO users_new VALUES (?,?,?)', user_data)
         id_to_uuid[row[0]] = guid
 
     users_cur.execute('DROP TABLE users')
