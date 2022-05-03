@@ -16,6 +16,11 @@
       entryPoints = ["http"]
       service = "stats"
       rule = "PathPrefix(`/stats`) || PathPrefix(`/longest_streak`) || PathPrefix(`/top_wins`) || PathPrefix(`/finish`)"
+    
+    [http.routers.redis_connect-http]
+      entryPoints = ["http"]
+      service = "redis_connect"
+      rule = "PathPrefix(`/start`) || PathPrefix(`/make_guess`) || PathPrefix(`/get_game`)"
 
   [http.services]
 
@@ -33,3 +38,6 @@
           url = "http://127.0.0.1:5201"
         [[http.services.stats.loadBalancer.servers]]
           url = "http://127.0.0.1:5202"
+      [http.services.redis_connect.loadBalancer]
+        [[http.services.redis_connect.loadBalancer.servers]]
+          url = "http://127.0.0.1:5300"

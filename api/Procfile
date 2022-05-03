@@ -1,4 +1,5 @@
 val: uvicorn --port $PORT validate:app --reload
 ans: uvicorn --port $PORT answer:app --reload
 sts: uvicorn --port $PORT stats:app --reload
+red: uvicorn --port $PORT redis_connect:app --reload
 tfk: ./traefik --configFile=traefik.toml

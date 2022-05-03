@@ -3,10 +3,14 @@ import collections
 import contextlib
 import sqlite3
 import typing
+import uuid
+import typing
+
 from datetime import datetime
 
 from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
+from collections import OrderedDict
 
 import redis
 r = redis.Redis()
@@ -24,6 +28,11 @@ class Settings(BaseSettings):
 class GameStart(BaseModel):
     og_id: int
     game_id: int
+
+class GameGuess(BaseModel):
+    og_id: int
+    game_id: int
+    guess: str
 
 def get_db():
     #db dependency yields a connection to all tables store in a list
@@ -48,14 +57,76 @@ def check(s: GameStart, response: Response, db: sqlite3.Connection = Depends(get
         db[3].commit()
     except Exception as e:
         return {"msg": "Error: Failed to reach users. " + str(e)}
-    shard = int(guid.UUID(bytes_le=u_id)) % 3
+    
+    shard = int(uuid.UUID(bytes_le=guid)) % 3
     
     try:
         cur = db[shard].cursor()
         cur.execute("SELECT * FROM games WHERE user_id = ? AND game_id = ?", (guid, s.game_id))
+        temp = cur.fetchall()
         db[shard].commit()
+    except Exception as e:
+        return {"msg": "Error: Failed to reach game. " + str(e)}
+    if len(temp) != 0 or len(r.hgetall(f"{guid},{s.game_id}")) != 0:
+        return {"msg": "Error: Game already finished. "}
+    guesses = {1:'',2:'',3:'',4:'',5:'',6:''}
+    r.hmset(f"{guid},{s.game_id}", guesses)
+    return {"msg": "Success: Game has been started"}
 
-    if len(cur.fetchall()[0]) != 0:
-        return {"msg": "Error: Game already finished. " + str(e)}
+@app.put("/make_guess/", status_code=status.HTTP_200_OK)
+def make_guess(s: GameGuess, response: Response, db: sqlite3.Connection = Depends(get_db)):
+    try:
+        cur = db[3].cursor()
+        cur.execute("SELECT user_id FROM users WHERE og_id = ?", (s.og_id,))
+        guid = cur.fetchall()[0][0]
+        db[3].commit()
+    except Exception as e:
+        return {"msg": "Error: Failed to reach users. " + str(e)}
+    
+    shard = int(uuid.UUID(bytes_le=guid)) % 3
+    
+    val = r.hgetall(f"{guid},{s.game_id}")
+    if len(val) == 0:
+        return {"msg": "Error: Game does not exist. "}
 
-    r.set({f""})
+    for k,v in val.items():
+        if len(v) == 0:
+            val[k] = s.guess
+            r.hmset(f"{guid},{s.game_id}", val)
+            return {"msg": "Success: Game has been inserted"}
+    
+    return {"msg": "Error: Only 6 guesses are allowed"}
+
+@app.get("/get_game/", status_code=status.HTTP_200_OK)
+def get_game(s: GameStart, response: Response, db: sqlite3.Connection = Depends(get_db)):
+    try:
+        cur = db[3].cursor()
+        cur.execute("SELECT user_id FROM users WHERE og_id = ?", (s.og_id,))
+        guid = cur.fetchall()[0][0]
+        db[3].commit()
+    except Exception as e:
+        return {"msg": "Error: Failed to reach users. " + str(e)}
+    
+    shard = int(uuid.UUID(bytes_le=guid)) % 3
+    
+    val = r.hgetall(f"{guid},{s.game_id}")
+    if len(val) == 0:
+        return {"msg": "Error: Game does not exist. "}
+
+    result = OrderedDict()
+    guesses = OrderedDict()
+
+    guess_count = 0
+    for k,v in val.items():
+        guess_num = int(k.decode("utf-8"))
+        if len(v) != 0:
+            guess_count += 1
+            guesses[guess_num] = v.decode("utf-8")
+        else:
+           break
+    
+    result["Current Guesses"] = guesses
+    result["Remaining Guesses"] = 6 - guess_count
+    return result
+
+    
