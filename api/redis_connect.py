@@ -22,9 +22,8 @@ class Settings(BaseSettings):
 
 
 class GameStart(BaseModel):
-    user_id: int
+    og_id: int
     game_id: int
-    num_guesses: int
 
 def get_db():
     #db dependency yields a connection to all tables store in a list
@@ -42,4 +41,21 @@ settings = Settings()
 app = FastAPI()
 @app.put("/start/", status_code=status.HTTP_200_OK)
 def check(s: GameStart, response: Response, db: sqlite3.Connection = Depends(get_db)):
+    try:
+        cur = db[3].cursor()
+        cur.execute("SELECT user_id FROM users WHERE og_id = ?", (s.og_id,))
+        guid = cur.fetchall()[0][0]
+        db[3].commit()
+    except Exception as e:
+        return {"msg": "Error: Failed to reach users. " + str(e)}
+    shard = int(guid.UUID(bytes_le=u_id)) % 3
     
+    try:
+        cur = db[shard].cursor()
+        cur.execute("SELECT * FROM games WHERE user_id = ? AND game_id = ?", (guid, s.game_id))
+        db[shard].commit()
+
+    if len(cur.fetchall()[0]) != 0:
+        return {"msg": "Error: Game already finished. " + str(e)}
+
+    r.set({f""})
