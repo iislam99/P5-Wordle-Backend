@@ -6,6 +6,8 @@ import sqlite3
 import redis
 import uuid
 
+print("Adding top wins and streaks to NoSQL database...")
+
 class Settings(BaseSettings):
     games_1_database: str
     games_2_database: str
@@ -31,11 +33,11 @@ db = [
 for i in db:
     i.row_factory = sqlite3.Row
 
-#r = redis.Redis()
+r = redis.Redis()
 
 # Wins View
-result = OrderedDict()
-#Takes the the top 10 wins from each shard and appends it to a list
+
+# Takes the the top 10 wins from each shard and appends it to a list
 top_table = []
 for shard in range(3):
     try: 
@@ -47,13 +49,15 @@ for shard in range(3):
     except Exception as e:
         print("Error: Failed to reach wins view. " + str(e))
 
-#Sorts top 30 users from across shards and sorts them and returns the top 10
+# Sorts top 30 users from across shards
 top_table.sort(reverse=True, key=lambda row: row[1])
 user_ids = []
+num_wins = []
 for row in top_table:
     user_ids.append(row[0])
-usernames = []
+    num_wins.append(row[1])
 
+usernames = []
 try: 
     for i in user_ids:
         cur = db[3].cursor()
@@ -65,23 +69,16 @@ except Exception as e:
 
 users = []
 for i in range(len(usernames)):
-    temp = OrderedDict()
-    temp["username"] = usernames[i]
-    temp["user_id"] = uuid.UUID(bytes_le=user_ids[i])
-    users.append(temp)
-result["Users"] = users
+    r.zadd("Wins", {usernames[i]: num_wins[i]})
 
-'''
-TODO
-Add data from results to redis db.
-'''
-# for i in result["Users"]:
-#     print(i)
-
+# print("\nWins:")
+# for key, score in r.zrevrange("Wins", 0, -1, withscores=True):
+#     print(key, score)
 
 
 # Streaks View
-result = OrderedDict()
+
+# Takes the the top 10 streaks from each shard and appends it to a list
 top_table = []
 for shard in range(3):
     try: 
@@ -93,12 +90,15 @@ for shard in range(3):
     except Exception as e:
         print("Error: Failed to reach streaks view. " + str(e))
 
+# Sorts top 30 users from across shards
 top_table.sort(reverse=True, key=lambda row: row[1])
 user_ids = []
+num_streaks = []
 for row in top_table:
     user_ids.append(row[0])
-usernames =[]
+    num_streaks.append(row[1])
 
+usernames =[]
 try: 
     for i in user_ids:
         cur = db[3].cursor()
@@ -107,17 +107,9 @@ try:
 except Exception as e:
     print("Error: Failed to reach users table. " + str(e))
 
-users = []
 for i in range(len(usernames)):
-    temp = OrderedDict()
-    temp["username"] = usernames[i]
-    temp["user_id"] = uuid.UUID(bytes_le=user_ids[i])
-    users.append(temp)
-result["Users"] = users
+    r.zadd("Streaks", {usernames[i]: num_streaks[i]})
 
-'''
-TODO
-Add data from results to redis db.
-'''
-for i in result["Users"]:
-    print(i["user_id"])
+# print("\nStreaks:")
+# for key, score in r.zrevrange("Streaks", 0, -1, withscores=True):
+#     print(key, score)
