@@ -2,6 +2,7 @@ import collections
 import contextlib
 import sqlite3
 import uuid
+import redis
 import typing
 from datetime import date
 from collections import OrderedDict
@@ -52,6 +53,7 @@ def get_db():
 
 settings = Settings()
 app = FastAPI()
+r = redis.Redis()
 sqlite3.register_converter('GUID', lambda b: uuid.UUID(bytes_le=b))
 sqlite3.register_adapter(uuid.UUID, lambda u: u.bytes_le)
 
@@ -255,42 +257,11 @@ def fetch_top_wins(
     response: Response, db: list() = Depends(get_db)
 ):
     result = OrderedDict()
-    #Takes the the top 10 wins from each shard and appends it to a list
-    top_table = []
-    for shard in range(3):
-        try: 
-            cur = db[shard].cursor()
-            cur.execute("SELECT * FROM wins LIMIT 10")
-            vals = cur.fetchall()
-            for row in vals:
-                top_table.append(row)
-        except Exception as e:
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "Error: Failed to reach wins table. " + str(e)}
-
-    #Sorts top 30 users from across shards and sorts them and returns the top 10
-    top_table.sort(reverse=True, key=lambda row: row[1])
-    top_table = top_table[0:10]
-    user_ids = []
-    for row in top_table:
-        user_ids.append(row[0])
-    usernames = []
-    
-    try: 
-        for i in user_ids:
-            cur = db[3].cursor()
-            cur.execute("SELECT username FROM users WHERE user_id = ?", (i,))
-            name = cur.fetchall()[0][0]
-            usernames.append(name)
-    except Exception as e:
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        return {"msg": "Error: Failed to reach users table. " + str(e)}
-    
     users = []
-    for i in range(10):
+    for key, score in r.zrevrange("Wins", 0, 9, withscores=True):
         temp = OrderedDict()
-        temp["username"] = usernames[i]
-        temp["user_id"] = uuid.UUID(bytes_le=user_ids[i])
+        temp["username"] = key.decode("utf-8")
+        temp["wins"] = score
         users.append(temp)
     result["Users"] = users
 
@@ -301,39 +272,11 @@ def fetch_longest_streaks(
     response: Response, db: list() = Depends(get_db)
 ):
     result = OrderedDict()
-    top_table = []
-    for shard in range(3):
-        try: 
-            cur = db[shard].cursor()
-            cur.execute("SELECT user_id, streak FROM streaks ORDER BY streak DESC LIMIT 10")
-            vals = cur.fetchall()
-            for row in vals:
-                top_table.append(row)
-        except Exception as e:
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "Error: Failed to reach wins table. " + str(e)}
-    
-    top_table.sort(reverse=True, key=lambda row: row[1])
-    top_table = top_table[0:10]
-    user_ids = []
-    for row in top_table:
-        user_ids.append(row[0])
-    usernames =[]
-    
-    try: 
-        for i in user_ids:
-            cur = db[3].cursor()
-            cur.execute("SELECT username FROM users WHERE user_id = ?", (i,))
-            usernames.append(cur.fetchall()[0][0])
-    except Exception as e:
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        return {"msg": "Error: Failed to reach users table. " + str(e)}
-    
     users = []
-    for i in range(10):
+    for key, score in r.zrevrange("Streaks", 0, 9, withscores=True):
         temp = OrderedDict()
-        temp["username"] = usernames[i]
-        temp["user_id"] = uuid.UUID(bytes_le=user_ids[i])
+        temp["username"] = key.decode("utf-8")
+        temp["streak"] = score
         users.append(temp)
     result["Users"] = users
 

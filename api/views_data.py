@@ -6,7 +6,7 @@ import sqlite3
 import redis
 import uuid
 
-print("Adding top wins and streaks to NoSQL database...")
+print("Adding views to Redis database...")
 
 class Settings(BaseSettings):
     games_1_database: str
@@ -73,7 +73,7 @@ for i in range(len(usernames)):
 
 # print("\nWins:")
 # for key, score in r.zrevrange("Wins", 0, -1, withscores=True):
-#     print(key, score)
+#     print(key.decode("utf-8"), score)
 
 
 # Streaks View
@@ -111,5 +111,7 @@ for i in range(len(usernames)):
     r.zadd("Streaks", {usernames[i]: num_streaks[i]})
 
 # print("\nStreaks:")
-# for key, score in r.zrevrange("Streaks", 0, -1, withscores=True):
-#     print(key, score)
+# count = 0
+# for key, score in r.zrevrange("Streaks", 0, 9, withscores=True):
+#     print(count, key.decode("utf-8"), score)
+#     count += 1
