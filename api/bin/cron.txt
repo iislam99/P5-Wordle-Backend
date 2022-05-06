@@ -1,0 +1,1 @@
+*/10 * * * * /home/ubuntu/Word-leMicroservice-1/api/views_data.py >> /home/ubuntu/Word-leMicroservice-1/api/cron2_log.txt

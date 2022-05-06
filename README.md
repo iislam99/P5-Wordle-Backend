@@ -23,6 +23,13 @@ cd WordleClone
 sudo apt update
 sudo apt install --yes python3-pip ruby-foreman sqlite3 httpie jq
 python3 -m pip install 'fastapi[all]' sqlite-utils
+sudo apt install --yes redis
+sudo apt install --yes python3-hiredis
+sudo apt-get install gnome-schedule
+```
+If `sudo apt-get install gnome-schedule` doesn't work try
+```bash
+sudo apt-get install cron
 ```
 
 4. Go into the `api` directory

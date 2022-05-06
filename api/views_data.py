@@ -5,7 +5,9 @@ from pydantic import BaseSettings
 import sqlite3
 import redis
 import uuid
-
+from datetime import datetime
+now = datetime.now()
+print("Cron Log:",now)
 print("Adding views to Redis database...")
 
 class Settings(BaseSettings):
