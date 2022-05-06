@@ -116,3 +116,20 @@ Test Getting Users with Longest Streak:
 
 
 ## Project 4 Endpoints
+
+#### NOTE: og_id is the original user integer ID, NOT the user's UUID.
+
+Start a new game for a specific user:
+```bash
+./bin/p4-endpoints/start_game.sh <og_id> <game_id>
+```
+
+Check the guesses made and the number of guess remaining for a specific game a specific user is playing:
+```bash
+./bin/p4-endpoints/get_game.sh <og_id> <game_id>
+```
+
+Make a guess on a specific game for a specific user:
+```bash
+./bin/p4-endpoints/make_guess.sh <og_id> <game_id> <word>
+```
