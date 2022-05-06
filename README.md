@@ -48,12 +48,50 @@ On the port for the microservice use the `/docs/` endpoint to check the availabl
 8. In a separate terminal, you can test the microservices using the scripts in the `bin/endpoint-tests/` directory
 Most of the scripts use command line arguments to send words, here is an example of one being used
 
-Test word validation:
+## Project 2 Endpoints
+
+Check if a guess is a valid five-letter word:
 ```bash
 ./bin/endpoint-tests/put_validate.sh <word>
 ```
 
-## Project 3 end points
+Check a guess against the word of the day:
+```bash
+./bin/endpoint-tests/put_check.sh <word>
+```
+
+Add a word to the valid words database:
+```bash
+./bin/endpoint-tests/post_word.sh <word>
+```
+
+Delete a word from the valid words database:
+```bash
+./bin/endpoint-tests/delete_word.sh <word>
+```
+
+Add a word to the answers database:
+```bash
+./bin/endpoint-tests/post_answer.sh <word>
+```
+
+Delete a word from the answers database:
+```bash
+./bin/endpoint-tests/delete_answer.sh <word>
+```
+
+Change the current word of the day to a custom word:
+```bash
+./bin/endpoint-tests/post_next_answer.sh <word>
+```
+
+Remove the custom word of the day and set it back to the original:
+```bash
+./bin/endpoint-tests/delete_next_answer.sh
+```
+
+
+## Project 3 Endpoints
 
 Test posting win or loss:
 ```bash
@@ -75,3 +113,6 @@ Test Getting Users with Longest Streak:
 ```bash
 ./bin/endpoint-tests/get_longest_streak.sh
 ```
+
+
+## Project 4 Endpoints
