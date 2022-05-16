@@ -33,7 +33,7 @@ class Game(BaseModel):
     won: bool
 
 class Stats(BaseModel):
-    username: str
+    user_id: str
     game_id: int
     guesses: int
     won: bool
@@ -64,24 +64,19 @@ def process_end(
     stats: Stats, response: Response, db: list() = Depends(get_db)
 ):
     today = date.today().strftime("%Y-%m-%d")
-    username = stats.username
+    guid = uuid.UUID(stats.user_id).bytes_le
+    print(type(guid), guid)
+    shard = int(uuid.UUID(bytes_le=guid)) % 3
     
+    result = OrderedDict()
+
     try:
         cur = db[3].cursor()
-        cur.execute("SELECT user_id FROM users WHERE username = ?", (username,))
-        guid = cur.fetchall()[0][0]
-        db[3].commit()
-    except Exception as e:
+        cur.execute("SELECT * FROM users WHERE user_id = ?", (guid,))
+        val = cur.fetchall()
+    except:
         return {"msg": "Error: Failed to reach users. " + str(e)}
-    
-    try:
-        # Get user_id from username --> get shard with user_id
-        cur = db[3].cursor()
-        cur.execute("SELECT user_id FROM users WHERE username = ?", (username,))
-        u_id = cur.fetchall()[0][0]
-        shard = int(uuid.UUID(bytes_le=u_id)) % 3
-    except Exception as e:
-        return {"msg": "Error: Failed to identify shard. " + str(e)}
+
 
     try:
         cur = db[shard].cursor()

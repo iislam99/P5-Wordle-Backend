@@ -140,3 +140,13 @@ Make a guess on a specific game for a specific user:
 ```bash
 ./bin/p4-endpoints/make_guess.sh <og_id> <game_id> <word>
 ```
+
+
+## Project 5 - Dependency Changes
+1. change /start/ in redis_connect.py to take in a username and return the status, user_id, game_id. It will also return the guesses made if the game is in progress
+
+2. change /get_game/ in redis_connect.py to take in a UUID as user_id instead of the old user_id, This method now returns a status for if the user_id is invalid, the game_id is invalid, or if both are valid. If both are valid, the endpoint still give the current guesses and remainig guesses.
+
+3. change /make_guess/ in redis_connect.py to take in a UUID as user_id instead of the old user_id
+
+4. change /finish/ to take in stats.py to take in a UUID as user_id instead of the old user_id
