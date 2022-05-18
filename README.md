@@ -145,7 +145,7 @@ Make a guess on a specific game for a specific user:
 ## Project 5 - Dependency Changes
 1. change /start/ in redis_connect.py to take in a username and return the status, user_id, game_id. It will also return the guesses made if the game is in progress
 
-2. change /get_game/ in redis_connect.py to take in a UUID as user_id instead of the old user_id, This method now returns a status for if the user_id is invalid, the game_id is invalid, or if both are valid. If both are valid, the endpoint still gives the current guesses and remainig guesses.
+2. change /get_game/ in redis_connect.py to take in a UUID as user_id instead of the old user_id. This method now returns a status for if the user_id is invalid, the game_id is invalid, or if both are valid. If both are valid, the endpoint still gives the current guesses and remainig guesses. It is also now a POST request instead of GET.
 
 3. change /make_guess/ in redis_connect.py to take in a UUID as user_id instead of the old user_id
 
