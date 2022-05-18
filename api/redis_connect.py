@@ -103,21 +103,22 @@ def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get
         print(start_val.decode("utf-8"))
         break
 
-    # game is in progress
-
-    if len(val) > 0 and start_val.decode("utf-8") != '':
-        res['status'] = "in-progress"
-        res["user_id"] = str(uuid.UUID(bytes_le=guid))
-        res["game_id"] = game_id
-        res["guesses"] = val
     # the game of the day is over
-    elif len(games) != 0:
+    if len(games) != 0:
         if games[0][4] == 1:
             res['status'] = "won"
         else:
             res['status'] = "lost"
         res["user_id"] = str(uuid.UUID(bytes_le=guid))
         res["game_id"] = game_id
+    
+    # game is in progress
+    elif len(val) > 0 and start_val.decode("utf-8") != '':
+        res['status'] = "in-progress"
+        res["user_id"] = str(uuid.UUID(bytes_le=guid))
+        res["game_id"] = game_id
+        res["guesses"] = val
+
     # new game
     else:
         guesses = {1:'',2:'',3:'',4:'',5:'',6:''}
@@ -130,7 +131,10 @@ def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get
 
 @app.put("/make_guess/", status_code=status.HTTP_200_OK)
 def make_guess(s: GameGuess, response: Response, db: sqlite3.Connection = Depends(get_db)):
-    guid = uuid.UUID(s.user_id).bytes_le
+    try:
+        guid = uuid.UUID(s.user_id).bytes_le
+    except:
+        return {"msg": "Error: Invalid GUID"}
     print(type(guid), guid)
     shard = int(uuid.UUID(bytes_le=guid)) % 3
         
@@ -147,7 +151,7 @@ def make_guess(s: GameGuess, response: Response, db: sqlite3.Connection = Depend
     
     val = r.hgetall(f"{guid},{s.game_id}")
     if len(val) == 0:
-        return {"msg": "Error: Guess does not exist. "}
+        return {"msg": "Error: Game does not exist. "}
 
     for k,v in val.items():
         if len(v) == 0:
@@ -181,18 +185,21 @@ def get_game(s: GameStart, response: Response, db: sqlite3.Connection = Depends(
     # except Exception as e:
     #     return {"msg": "Error: Failed to reach users. " + str(e)}
     
-    guid = uuid.UUID(s.user_id).bytes_le
-    print(type(guid), guid)
-    shard = int(uuid.UUID(bytes_le=guid)) % 3
-    
     result = OrderedDict()
+    try:
+        guid = uuid.UUID(s.user_id).bytes_le
+    except:
+        result['status'] = "Invalid user_id"
+        return result
+    shard = int(uuid.UUID(bytes_le=guid)) % 3
 
     try:
         cur = db[3].cursor()
         cur.execute("SELECT * FROM users WHERE user_id = ?", (guid,))
         val = cur.fetchall()
     except:
-        return {"msg": "Error: Failed to reach users. " + str(e)}
+        result['status'] = "Failed to reach users"
+        return result
 
     if len(val) ==0:
         response.status_code = status.HTTP_400_BAD_REQUEST
