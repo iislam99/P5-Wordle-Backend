@@ -95,7 +95,7 @@ def check(word_obj: Word, response: Response, db: sqlite3.Connection = Depends(g
     if (DEBUG):
         return {"correct": correct, "results": results, "word_of_the_day": todaysWord}
     else:
-        return {"correct": correct, "results": results}
+        return {"correct": correct, "results": results, "word_of_the_day": todaysWord}
 
 @app.post("/next-answer/", status_code=status.HTTP_201_CREATED)
 def set_next_answer(

@@ -62,17 +62,25 @@ app = FastAPI()
 @app.put("/start/", status_code=status.HTTP_200_OK)
 def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get_db)):
     
+    res = OrderedDict()
+    
     try:
         cur = db[3].cursor()
         cur.execute("SELECT user_id FROM users WHERE username = ?", (s.username,))
-        guid = cur.fetchall()[0][0]
+        try:
+            guid = cur.fetchall()[0][0]
+        except Exception as e:
+            res['status'] = "No user_id found"
+            return res
         db[3].commit()
     except Exception as e:
         return {"msg": "Error: Failed to reach users. " + str(e)}
     
+    print("passed first try except")
     shard = int(uuid.UUID(bytes_le=guid)) % 3
     game_id = dayIndex()
-    res = OrderedDict()
+    
+
 
     try:
         cur = db[shard].cursor()
@@ -82,12 +90,24 @@ def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get
     except Exception as e:
         return {"msg": "Error: Failed to reach game. " + str(e)}
     
-    
+    print(f"{guid},{game_id}")
     val = r.hgetall(f"{guid},{game_id}")
+    print(val)
+    start = 0
+    start_val = 0
+    for k,v in val.items():
+        start = k
+        start_val = v
+        print(start)
+        print(start_val)
+        print(start_val.decode("utf-8"))
+        break
+
     # game is in progress
-    if len(val) > 0 and val[0] != '':
+
+    if len(val) > 0 and start_val.decode("utf-8") != '':
         res['status'] = "in-progress"
-        res["user_id"] = guid
+        res["user_id"] = str(uuid.UUID(bytes_le=guid))
         res["game_id"] = game_id
         res["guesses"] = val
     # the game of the day is over
@@ -96,15 +116,16 @@ def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get
             res['status'] = "won"
         else:
             res['status'] = "lost"
-        res["user_id"] = guid
+        res["user_id"] = str(uuid.UUID(bytes_le=guid))
         res["game_id"] = game_id
     # new game
     else:
         guesses = {1:'',2:'',3:'',4:'',5:'',6:''}
         r.hmset(f"{guid},{game_id}", guesses)
         res['status'] = "new"
-        res["user_id"] = guid
+        res["user_id"] = str(uuid.UUID(bytes_le=guid))
         res["game_id"] = game_id
+    
     return res
 
 @app.put("/make_guess/", status_code=status.HTTP_200_OK)
@@ -124,16 +145,15 @@ def make_guess(s: GameGuess, response: Response, db: sqlite3.Connection = Depend
         response.status_code = status.HTTP_400_BAD_REQUEST
         return  {"msg": "Error: User does not exist " }
     
-    
     val = r.hgetall(f"{guid},{s.game_id}")
     if len(val) == 0:
-        return {"msg": "Error: Game does not exist. "}
+        return {"msg": "Error: Guess does not exist. "}
 
     for k,v in val.items():
         if len(v) == 0:
             val[k] = s.guess
             r.hmset(f"{guid},{s.game_id}", val)
-            return {"msg": "Success: Game has been inserted"}
+            return {"msg": "Success: Guess has been inserted"}
     
     return {"msg": "Error: Only 6 guesses are allowed"}
 
@@ -177,13 +197,13 @@ def get_game(s: GameStart, response: Response, db: sqlite3.Connection = Depends(
     if len(val) ==0:
         response.status_code = status.HTTP_400_BAD_REQUEST
         result['status'] = "Invalid user_id"
-        return res
+        return result
 
     val = r.hgetall(f"{guid},{s.game_id}")
     if len(val) == 0:
         response.status_code = status.HTTP_400_BAD_REQUEST
         result['status'] = "Invalid game_iD"
-        return res
+        return result
     
     guesses = OrderedDict()
 

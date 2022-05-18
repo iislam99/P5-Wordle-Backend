@@ -5,7 +5,7 @@ import typing
 
 from fastapi import FastAPI, Depends, Response, HTTPException, status
 from pydantic import BaseModel, BaseSettings
-
+from collections import OrderedDict
 
 class Settings(BaseSettings):
     valid_words_database: str
@@ -34,7 +34,7 @@ def validate_word(
     word_obj: Word, response: Response, db: sqlite3.Connection = Depends(get_db)
 ):
     word = word_obj.word.lower() 
-   
+    res = OrderedDict()
     if (len(word) != 5):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"msg": "Error: Incorrect word length"}
@@ -48,10 +48,12 @@ def validate_word(
 
     word_exists = bool(cur.fetchall()[0][0])
     if word_exists:
-        return {"msg": "Valid"}
+        res['status'] = "Valid"
+        return res
     else:
         response.status_code = status.HTTP_404_NOT_FOUND
-        return {"msg": "Invalid"}
+        res['status'] = "Invalid"
+        return res
 
 
 @app.post("/words/", status_code=status.HTTP_201_CREATED)

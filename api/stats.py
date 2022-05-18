@@ -23,8 +23,7 @@ class Settings(BaseSettings):
 
 class User(BaseModel):
     # user id can be fetched or provided depending on if the user knows their id
-    user_id: int = None
-    username: str
+    user_id: str
 
 class Game(BaseModel):
     user_id: int
@@ -181,34 +180,23 @@ def fetch_stats(
     user: User, response: Response, db: list() = Depends(get_db)
 ):
     today = date.today().strftime("%Y-%m-%d")
-    cur_name = user.username
-    cur_id = user.user_id
-
-    if not cur_id:
-        try:
-            cur = db[3].cursor()
-            cur.execute("SELECT user_id FROM users WHERE username = ?", (cur_name,))
-            cur_id = cur.fetchall()[0][0]
-        except Exception as e:
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "Error: Failed to reach users table. " + str(e)}
     
-    try:
-        shard = int(uuid.UUID(bytes_le=cur_id)) % 3
-    except Exception as e:
-        return {"msg": "Error: Failed to identify shard. " + str(e)}
-
+    cur_id = uuid.UUID(user.user_id).bytes_le
+    shard = int(uuid.UUID(bytes_le=cur_id)) % 3
     result = OrderedDict()
     try:
         cur = db[shard].cursor()
         cur.execute("SELECT MAX(streak) FROM streaks WHERE user_id = ?", (cur_id,))
-        maxStreak = cur.fetchall()[0][0]
+        
+        maxStreak = cur.fetchall()
+        maxStreak = maxStreak[0][0] 
         
         # for current streak, we need to check if there is an existing streak
         # where the finished date is equal to today's date
         cur.execute("SELECT streak FROM streaks WHERE user_id = ? AND ending = ?", (cur_id, today))
         
         curStreak = cur.fetchall()
+        print(curStreak)
         curStreak = curStreak[0][0] if len(curStreak) != 0 else 0
         
         cur.execute("SELECT COUNT(game_id) FROM games WHERE user_id = ?", (cur_id,))
