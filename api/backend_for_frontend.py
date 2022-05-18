@@ -15,6 +15,6 @@ def new_game(user: User, response: Response):
     res.update(r.json())
     return res
 
-@app.post("/game/{game_id}", status_code=status.HTTP_200_OK)
-def new_game(user: User, response: Response):
+@app.post("/game/{game_id}/", status_code=status.HTTP_200_OK)
+def game_guess(user: User, response: Response):
     pass

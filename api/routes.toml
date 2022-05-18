@@ -25,7 +25,7 @@
     [http.routers.backend_for_frontend-http]
       entryPoints = ["http"]
       service = "backend_for_frontend"
-      rule = "PathPrefix(`/game/new`)"
+      rule = "PathPrefix(`/game/new`) || PathPrefix(`/game/{game_id:[0-999999]}`)"
 
   [http.services]
 
