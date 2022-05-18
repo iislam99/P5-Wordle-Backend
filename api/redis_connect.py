@@ -157,7 +157,7 @@ def make_guess(s: GameGuess, response: Response, db: sqlite3.Connection = Depend
     
     return {"msg": "Error: Only 6 guesses are allowed"}
 
-@app.get("/get_game/", status_code=status.HTTP_200_OK)
+@app.post("/get_game/", status_code=status.HTTP_200_OK)
 def get_game(s: GameStart, response: Response, db: sqlite3.Connection = Depends(get_db)):
     # try:
     #     cur = db[3].cursor()
