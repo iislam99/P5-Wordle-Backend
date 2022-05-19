@@ -7,7 +7,7 @@ class User(BaseModel):
     username: str
 
 class Game(BaseModel):
-    user_id: str,
+    user_id: str
     guess: str
 
 app = FastAPI()
@@ -78,5 +78,92 @@ def new_game(user: User, response: Response):
     return res
 
 @app.post("/game/{game_id}/", status_code=status.HTTP_200_OK)
-def game_guess(user: User, response: Response):
-    pass
+def game_guess(game_id: int, game: Game, response: Response):
+    res = OrderedDict()
+
+    # Ensure word is valid before making guess
+    r = httpx.put('http://localhost:9999/validate/', json={"word": game.guess})
+    valid_r = r.json()
+    if valid_r.get("status", 0):
+        if valid_r["status"] == "Invalid":
+            return valid_r
+    else:
+        return valid_r
+    
+    # Get game
+    r = httpx.post(
+        'http://localhost:9999/get_game/', 
+        json={
+            "user_id": game.user_id,
+            "game_id": game_id
+        }
+    )
+    game_r = r.json()
+    if game_r["status"] != "Valid":
+        return game_r
+    
+    # Check if user has any guesses left
+    if not game_r["remaining guesses"]:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"msg": "Error: No guesses remaining."}
+    
+    # Make guess; handles invalid user and game ids
+    r = httpx.put(
+        'http://localhost:9999/make_guess/', 
+        json={
+            "user_id": game.user_id,
+            "game_id": game_id,
+            "guess": game.guess
+        }
+    )
+    guess_r = r.json()
+    if "Success" not in guess_r["msg"]:
+        return guess_r
+
+    # Check guess
+    r = httpx.put('http://localhost:9999/check/', json={"word": game.guess})
+    guess_r = r.json()
+
+    if guess_r["correct"]:
+        res["status"] = "win"
+        won = 1
+    elif not game_r["remaining guesses"] - 1:
+        res["status"] = "loss"
+        won = 0
+    else:
+        correct = []
+        present = []
+        for i, pos in enumerate(guess_r["results"]):
+            if pos == 2:
+                correct.append(game.guess[i])
+            elif pos == 1:
+                present.append(game.guess[i])
+
+        res["status"] = "incorrect"
+        res["remaining"] = game_r["remaining guesses"] - 1
+        res["letters"] = {"correct": correct, "present": present}
+        return res
+    
+    # POST finished game data
+    res["remaining"] = game_r["remaining guesses"] - 1
+    r = httpx.post(
+        'http://localhost:9999/finish/', 
+        json={
+            "user_id": game.user_id,
+            "game_id": game_id,
+            "guesses": 6 - res["remaining"],
+            "won": won
+        }
+    )
+    finish_r = r.json()
+    if not finish_r.get("msg", 0):
+        return finish_r
+    elif "Successfully" not in finish_r["msg"]:
+        return finish_r
+    
+    # Get player stats
+    r = httpx.post('http://localhost:9999/stats/', json={"user_id": game.user_id})
+    finish_r = r.json()
+    res.update(finish_r)
+
+    return res
