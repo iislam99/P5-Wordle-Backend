@@ -76,12 +76,9 @@ def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get
     except Exception as e:
         return {"msg": "Error: Failed to reach users. " + str(e)}
     
-    print("passed first try except")
     shard = int(uuid.UUID(bytes_le=guid)) % 3
     game_id = dayIndex()
     
-
-
     try:
         cur = db[shard].cursor()
         cur.execute("SELECT * FROM games WHERE user_id = ? AND game_id = ?", (guid, game_id))
@@ -90,17 +87,12 @@ def check(s: UserStart, response: Response, db: sqlite3.Connection = Depends(get
     except Exception as e:
         return {"msg": "Error: Failed to reach game. " + str(e)}
     
-    print(f"{guid},{game_id}")
     val = r.hgetall(f"{guid},{game_id}")
-    print(val)
     start = 0
     start_val = 0
     for k,v in val.items():
         start = k
         start_val = v
-        print(start)
-        print(start_val)
-        print(start_val.decode("utf-8"))
         break
 
     # the game of the day is over
