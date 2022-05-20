@@ -152,3 +152,16 @@ Make a guess on a specific game for a specific user:
 4. change /finish/ in stats.py to take in a UUID as user_id instead of the old user_id
 
 5. change /stats/ in stats.py to take in a UUID as user_id instead of the old user_id
+
+
+## Project 5 Endpoints
+
+Start the game of the day for a specific user:
+```bash
+./bin/p5-endpoints/new_game.sh <username>
+```
+
+Make a guess for a specific user for a specific game. Evaluates guess validity and compares to answer. Outputs information for that game when in-progress and user stats if won/lost.
+```bash
+./bin/p5-endpoints/game_info.sh <game_id> <user_id> <guess>
+```
