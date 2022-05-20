@@ -50,6 +50,11 @@ cd api
 ```
 This will download the wordle wordlists, parse them, create the database, and fill the database
 
+If an error related to Redis occurs while running the init script, run the following line in a separate terminal:
+```bash
+redis-server
+```
+
 6. Start all the microservices and the load balancer
 ```bash
 ./start.sh
