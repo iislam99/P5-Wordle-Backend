@@ -1,6 +1,12 @@
 # Wordle Clone
 
-### Created by
+### Project 5 by
+* Evan Delasota
+* Iftekharul Islam
+* Minkyu Ray Park
+* Quauhtli Garcia-Brindis
+
+### Projects 2-4 by
 * Aaron Lieberman
 * Armanul Ambia
 * Iftekharul Islam
